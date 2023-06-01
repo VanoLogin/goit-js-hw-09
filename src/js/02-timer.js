@@ -1,7 +1,7 @@
-
 import flatpickr from 'flatpickr';
 import 'flatpickr/dist/flatpickr.min.css';
-
+import Notiflix from 'notiflix';
+//----------------------------------------------------------------
 const refs = {
   inputEl: document.getElementById('datetime-picker'),
   startBtn: document.getElementById('start'),
@@ -10,6 +10,11 @@ const refs = {
   dataMinutes: document.querySelector('[data-minutes]'),
   dataSeconds: document.querySelector('[data-seconds]'),
 };
+//-`
+refs.startBtn.disabled = true;
+
+let timer = null;
+//-----`//
 
 const options = {
   enableTime: true,
@@ -17,26 +22,22 @@ const options = {
   defaultDate: new Date(),
   minuteIncrement: 1,
   onClose(selectedDates) {
-    const selectedDate = selectedDates[0];
-    const currentDate = new Date();
-
-    if (selectedDate > currentDate) {
-      refs.startBtn.disabled = false;
+    if (selectedDates[0] < new Date()) {
+        Notiflix.Report.warning('Oops', 'Choose the date in the future', 'Got it!');
+        refs.startBtn.disabled = true;
     } else {
-      refs.startBtn.disabled = true;
-      alert('Please select a date in the future');
+        refs.startBtn.disabled = false;
     }
   },
 };
 
 const fp = flatpickr('#datetime-picker', options);
 
-let timer = null;
-
 function addLeadingZero(value) {
   return value.toString().padStart(2, '0');
 }
 
+//---------------------------// 
 function convertMs(ms) {
   const second = 1000;
   const minute = second * 60;
@@ -50,13 +51,21 @@ function convertMs(ms) {
 
   return { days, hours, minutes, seconds };
 }
+//----------------------------------------------------------------
 
-function startTimer() {
+function countdown(){
+    timer = setInterval(setTime, 1000)
+}
+function setTime() {
   const endDateTime = fp.selectedDates[0];
   const now = new Date();
   let msUntilEnd = endDateTime - now;
-
-  timer = setInterval(() => {
+  
+  if ( msUntilEnd < 1000) {
+    clearInterval(timer);
+    Notiflix.Report.success('Time is up', 'Countdown is over', 'ok');
+}
+  
     const { days, hours, minutes, seconds } = convertMs(msUntilEnd);
 
     refs.dataDays.textContent = addLeadingZero(days);
@@ -64,12 +73,7 @@ function startTimer() {
     refs.dataMinutes.textContent = addLeadingZero(minutes);
     refs.dataSeconds.textContent = addLeadingZero(seconds);
 
-    if (msUntilEnd <= 0) {
-      return clearInterval(timer);
-    }
-
-    msUntilEnd -= 1000;
-  }, 1000);
+  refs.startBtn.disabled = true;
 }
 
-refs.startBtn.addEventListener('click', startTimer);
+refs.startBtn.addEventListener('click', countdown);
